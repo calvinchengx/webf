@@ -45,6 +45,8 @@ const paths = {
   performanceTests: resolveWebF('performance_tests')
 };
 
+console.log(paths.bridge, paths);
+
 const pkgVersion = readFileSync(path.join(paths.webf, 'pubspec.yaml'), 'utf-8').match(/version: (.*)/)[1].trim();
 const isProfile = process.env.ENABLE_PROFILE === 'true';
 
