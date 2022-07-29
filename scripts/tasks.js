@@ -134,6 +134,7 @@ task('build-darwin-webf-lib', done => {
 });
 
 task('run-bridge-unit-test', done => {
+  console.log(paths.bridge);
   if (platform === 'darwin') {
     execSync(`${path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test')}`, {stdio: 'inherit'});
   } else if (platform === 'linux') {
