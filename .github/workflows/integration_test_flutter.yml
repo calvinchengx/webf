@@ -47,6 +47,8 @@ jobs:
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
+    - run: pwd
+    - run: ls -la
     - run: node scripts/run_bridge_unit_test.js
 
   # webf_unit_test:
