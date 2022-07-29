@@ -49,6 +49,9 @@ jobs:
     - run: npm i
     - run: pwd
     - run: ls -la
+    - run: sudo apt-get install tree
+    - run: npm run build:bridge:linux:release
+    - run: tree ./bridge
     - run: node scripts/run_bridge_unit_test.js
 
   # webf_unit_test:
