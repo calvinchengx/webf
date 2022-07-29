@@ -45,9 +45,6 @@ const paths = {
   performanceTests: resolveWebF('performance_tests')
 };
 
-console.log('root', WEBF_ROOT, 'dirname', __dirname);
-console.log(paths.bridge, paths);
-
 const pkgVersion = readFileSync(path.join(paths.webf, 'pubspec.yaml'), 'utf-8').match(/version: (.*)/)[1].trim();
 const isProfile = process.env.ENABLE_PROFILE === 'true';
 
@@ -505,7 +502,7 @@ task('build-linux-webf-lib', (done) => {
     });
 
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target webf ${buildMode != 'Release' ? 'webf_test webf_unit_test' : ''} -- -j 12`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target webf ${buildMode != 'Release' ? 'webf_test' : ''} webf_unit_test -- -j 12`, {
     stdio: 'inherit'
   });
 
