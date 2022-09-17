@@ -173,14 +173,21 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-string.c
     third_party/quickjs/src/core/builtins/js-symbol.c
     third_party/quickjs/src/core/builtins/js-typed-array.c
+    third_party/quickjs/quickjs-libc.c
   )
-  if(${STATIC_QUICKJS})
+#  if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
-  else()
-    add_library(quickjs SHARED ${QUICK_JS_SOURCE})
-  endif()
+#  else()
+#    add_library(quickjs SHARED ${QUICK_JS_SOURCE})
+#  endif()
+
+  add_executable(qjsc ${QUICK_JS_SOURCE}
+    third_party/quickjs/qjsc.c
+    third_party/quickjs/quickjs-libc.c
+  )
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+  target_include_directories(qjsc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
@@ -292,6 +299,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
+  target_compile_options(qjsc PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_CC="clang")
 
 endif ()
 

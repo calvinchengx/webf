@@ -33,8 +33,8 @@
 #include <sys/wait.h>
 #endif
 
-#include "cutils.h"
-#include "quickjs-libc.h"
+#include "quickjs/cutils.h"
+#include "quickjs/quickjs-libc.h"
 
 typedef struct {
     char *name;
@@ -419,8 +419,8 @@ static int output_executable(const char *out_filename, const char *cfilename,
         pstrcpy(inc_dir, sizeof(inc_dir), exe_dir);
         pstrcpy(lib_dir, sizeof(lib_dir), exe_dir);
     } else {
-        snprintf(inc_dir, sizeof(inc_dir), "%s/include/quickjs", CONFIG_PREFIX);
-        snprintf(lib_dir, sizeof(lib_dir), "%s/lib/quickjs", CONFIG_PREFIX);
+        snprintf(inc_dir, sizeof(inc_dir), "%s/include/quickjs", "/Users/andycall.dong/workspace/webf2/bridge/third_party/quickjs");
+        snprintf(lib_dir, sizeof(lib_dir), "%s", "/Users/andycall.dong/workspace/webf2/bridge/cmake-build-debug");
     }
     
     lto_suffix = "";
