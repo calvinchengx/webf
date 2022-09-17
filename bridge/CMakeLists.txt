@@ -75,9 +75,9 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-        webf_bridge.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_foundation.h
+  webf_bridge.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_foundation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/dart_methods.h
   foundation/logging.cc
   foundation/logging.h
@@ -298,8 +298,12 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
+  add_compile_definitions(_GNU_SOURCE CONFIG_BIGNUM CONFIG_CHECK_JSVALUE)
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
   target_compile_options(qjsc PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_CC="clang")
+  IF(UNIX OR WIN32)
+    target_link_libraries(qjsc m pthread dl)
+  ENDIF()
 
 endif ()
 
