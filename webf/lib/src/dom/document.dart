@@ -37,6 +37,7 @@ class Document extends Node {
     this.widgetDelegate,
   })  : _viewport = viewport,
         super(NodeType.DOCUMENT_NODE, context) {
+    cookie_ = CookieJar(controller.url);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
   }
@@ -55,7 +56,8 @@ class Document extends Node {
 
   Element? focusedElement;
 
-  CookieJar cookie_ = CookieJar();
+  late CookieJar cookie_;
+  CookieJar get cookie => cookie_;
 
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
@@ -102,7 +104,7 @@ class Document extends Node {
   void setBindingProperty(String key, value) {
     switch(key) {
       case 'cookie':
-        cookie_.setCookie(value);
+        cookie.setCookie(value);
         break;
     }
 
@@ -113,7 +115,7 @@ class Document extends Node {
   getBindingProperty(String key) {
     switch(key) {
       case 'cookie':
-        return cookie_.cookie();
+        return cookie.cookie();
     }
 
     return super.getBindingProperty(key);
@@ -324,6 +326,7 @@ class Document extends Node {
     widgetDelegate = null;
     styleSheets.clear();
     adoptedStyleSheets.clear();
+    cookie.deleteCookies();
     super.dispose();
   }
 }
