@@ -51,8 +51,6 @@
   expect(main.offsetLeft > 60 && main.offsetLeft < 120).toBe(true);
   await sleep(1);
   expect(main.offsetLeft > 0 && main.offsetLeft < 30).toBe(true);
-  await sleep(0.5);
-  expect(main.offsetLeft > 50 && main.offsetLeft < 100).toBe(true);
-  await sleep(0.5);
-  expect(main.offsetLeft > 120 && main.offsetLeft < 150).toBe(true);
+  await sleep(1);
+  expect(main.offsetLeft > 110 && main.offsetLeft < 150).toBe(true);
 </script>
