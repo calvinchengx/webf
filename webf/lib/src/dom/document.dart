@@ -136,7 +136,16 @@ class Document extends Node {
       case 'getElementsByName':
         return getElementsByName(args);
     }
+
+    if (kDebugMode && method == '__clear_cookies__') {
+      return debugClearCookies(args);
+    }
+
     return super.invokeBindingMethod(method, args);
+  }
+
+  dynamic debugClearCookies(List<dynamic> args) {
+    cookie.deleteCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
