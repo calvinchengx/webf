@@ -1,3 +1,7 @@
+## 0.13.0-beta.9+
+
+* fix input checkbox display on vue3.
+
 ## 0.13.0-beta.9
 
 * fix input border style.

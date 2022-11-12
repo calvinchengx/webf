@@ -53,6 +53,10 @@ mixin BaseInputElement on WidgetElement {
 
   @override
   void propertyDidUpdate(String key, value) {
+    if (key == 'type') {
+      setAttribute('type', value);
+      return;
+    }
     _setAttribute(key, value == null ? '' : value.toString());
     super.propertyDidUpdate(key, value);
   }
