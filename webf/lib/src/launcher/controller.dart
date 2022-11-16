@@ -178,12 +178,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
+      initialCookies: initialCookies,
     );
     _setEventTarget(targetId, document);
-
-    if (initialCookies != null) {
-      document.cookie.setCookie(initialCookies!);
-    }
 
     // Listeners need to be registered to window in order to dispatch events on demand.
     if (gestureListener != null) {
