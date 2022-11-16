@@ -137,7 +137,7 @@ class Document extends Node {
         return getElementsByName(args);
     }
 
-    if (kDebugMode && method == '__clear_cookies__') {
+    if (kDebugMode && method == '___clear_cookies__') {
       return debugClearCookies(args);
     }
 
@@ -145,7 +145,7 @@ class Document extends Node {
   }
 
   dynamic debugClearCookies(List<dynamic> args) {
-    cookie.deleteCookies();
+    cookie.clearAllCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
