@@ -1,3 +1,9 @@
+## 0.13.0-beta.10
+
+* Add cookie support.
+* Fix bridge crash.
+* Use flutter widget to reimplement input and textarea element.
+
 ## 0.13.0-beta.9
 
 * fix input border style.
