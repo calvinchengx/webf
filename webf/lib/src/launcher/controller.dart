@@ -71,6 +71,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   GestureListener? gestureListener;
 
+  List<Cookie>? initialCookies;
+
   double _viewportWidth;
   double get viewportWidth => _viewportWidth;
   set viewportWidth(double value) {
@@ -98,6 +100,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
+      this.initialCookies,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
     if (enableDebug) {
@@ -178,6 +181,10 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     );
     _setEventTarget(targetId, document);
 
+    if (initialCookies != null) {
+      document.cookie.setCookie(initialCookies!);
+    }
+
     // Listeners need to be registered to window in order to dispatch events on demand.
     if (gestureListener != null) {
       GestureListener listener = gestureListener!;
@@ -216,8 +223,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     });
   }
 
-  void setCookie(Uri uri, List<Cookie> cookies) {
-    document.cookie.setCookie(uri, cookies);
+  void setCookie(List<Cookie> cookies) {
+    document.cookie.setCookie(cookies);
   }
 
   void evaluateJavaScripts(String code) {
@@ -830,6 +837,8 @@ class WebFController {
   OnCustomElementAttached? onCustomElementAttached;
   OnCustomElementDetached? onCustomElementDetached;
 
+  final List<Cookie>? initialCookies;
+
   String? _name;
   String? get name => _name;
   set name(String? value) {
@@ -867,6 +876,7 @@ class WebFController {
     this.httpClientInterceptor,
     this.devToolsService,
     this.uriParser,
+    this.initialCookies,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
@@ -886,6 +896,7 @@ class WebFController {
       rootController: this,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
+      initialCookies: initialCookies
     );
 
     if (kProfileMode) {

@@ -41,8 +41,9 @@ class CookieJar {
     }
   }
 
-  void setCookie(Uri uri, List<Cookie> cookies) {
+  void setCookie(List<Cookie> cookies) {
     if (_cookieJar != null) {
+      Uri uri = Uri.parse(url);
       _cookieJar!.saveFromAPISync(uri, cookies);
     }
   }
