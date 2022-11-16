@@ -152,7 +152,8 @@
     "id",
     "className",
     "cookie",
+    "syncPropertiesAndMethods",
     "class",
-    "syncPropertiesAndMethods"
+    "___clear_cookies__"
   ]
 }

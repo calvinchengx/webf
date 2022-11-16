@@ -14,6 +14,8 @@ import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/css.dart';
 
+typedef OnControllerCreated = void Function(WebFController controller);
+
 class WebF extends StatefulWidget {
   // The background color for viewport, default to transparent.
   final Color? background;
@@ -42,6 +44,9 @@ class WebF extends StatefulWidget {
   // This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
   // https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
   final RouteObserver<ModalRoute<void>>? routeObserver;
+
+  // Trigger when webf controller once created.
+  final OnControllerCreated? onControllerCreated;
 
   final LoadErrorHandler? onLoadError;
 
@@ -94,6 +99,7 @@ class WebF extends StatefulWidget {
       this.viewportWidth,
       this.viewportHeight,
       this.bundle,
+      this.onControllerCreated,
       this.onLoad,
       this.navigationDelegate,
       this.javaScriptChannel,
@@ -283,6 +289,11 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_CONTROLLER_INIT_END);
+    }
+
+    OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
+    if (onControllerCreated != null) {
+      onControllerCreated(controller);
     }
 
     return controller.view.getRootRenderObject();
