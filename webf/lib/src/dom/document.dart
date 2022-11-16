@@ -103,7 +103,7 @@ class Document extends Node {
   void setBindingProperty(String key, value) {
     switch(key) {
       case 'cookie':
-        cookie.setCookie(value);
+        cookie.setCookieString(value);
         break;
     }
 
