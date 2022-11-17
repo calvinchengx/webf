@@ -1,3 +1,7 @@
+## 0.13.0-beta.10+1
+
+* Fix set-cookie didn't have domain from http response.
+
 ## 0.13.0-beta.10
 
 * Add cookie support.
