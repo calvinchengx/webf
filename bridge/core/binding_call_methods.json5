@@ -154,6 +154,7 @@
     "cookie",
     "syncPropertiesAndMethods",
     "class",
-    "___clear_cookies__"
+    "___clear_cookies__",
+    "_clearFocus__"
   ]
 }

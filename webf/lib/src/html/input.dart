@@ -26,6 +26,7 @@ const Map<String, dynamic> _inputDefaultStyle = {
 const Map<String, dynamic> _checkboxDefaultStyle = {
   MARGIN: '3px 3px 3px 4px',
   PADDING: INITIAL,
+  DISPLAY: INLINE_BLOCK,
   BORDER: '0'
 };
 
@@ -39,8 +40,12 @@ class FlutterInputElement extends WidgetElement
 
   @override
   Map<String, dynamic> get defaultStyle {
-    if (type == 'text') {
-      return _inputDefaultStyle;
+    switch(type) {
+      case 'text':
+      case 'time':
+        return _inputDefaultStyle;
+      case 'checkbox':
+        return _checkboxDefaultStyle;
     }
     return super.defaultStyle;
   }
@@ -54,6 +59,11 @@ class FlutterInputElement extends WidgetElement
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
       focus();
     });
+    if (kDebugMode) {
+      methods['_clearFocus__'] = BindingObjectMethodSync(call: (args) {
+        _focusNode.unfocus();
+      });
+    }
   }
 
   @override
@@ -120,6 +130,7 @@ mixin BaseInputElement on WidgetElement {
     properties['placeholder'] = BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
     properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
+    properties['defaultValue'] = BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
   }
 
   @override
@@ -179,6 +190,11 @@ mixin BaseInputElement on WidgetElement {
     internalSetAttribute('label', value?.toString() ?? '');
   }
 
+  String? get defaultValue => getAttribute('defaultValue') ?? getAttribute('value') ?? '';
+  set defaultValue(value) {
+    internalSetAttribute('defaultValue', value?.toString() ?? '');
+  }
+
   bool get disabled => getAttribute('disabled') != null;
   set disabled(value) {
     internalSetAttribute('disabled', value?.toString() ?? '');
@@ -221,7 +237,7 @@ mixin BaseInputElement on WidgetElement {
 
   double? get width => renderStyle.width.value;
 
-  TextStyle get _style => TextStyle(
+  TextStyle get _textStyle => TextStyle(
         color: renderStyle.color,
         fontSize: renderStyle.fontSize.computedValue,
         fontWeight: renderStyle.fontWeight,
@@ -265,12 +281,13 @@ mixin BaseInputElement on WidgetElement {
       widget = TextFormField(
         controller: controller,
         enabled: !disabled && !readonly,
-        style: _style,
+        style: _textStyle,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
+        textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color,
@@ -283,12 +300,13 @@ mixin BaseInputElement on WidgetElement {
       widget = TextField(
         controller: controller,
         enabled: !disabled && !readonly,
-        style: _style,
+        style: _textStyle,
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
         maxLength: maxLength,
         onChanged: onChanged,
+        textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color,
@@ -318,9 +336,12 @@ mixin BaseInputElement on WidgetElement {
       if (ownerDocument.focusedElement == this) {
         ownerDocument.focusedElement = null;
       }
+      // When the element loses focus after its value was changed: for elements where the user's interaction is typing rather than selection,
+      // such as a <textarea> or the text, search, url, tel, email, or password types of the <input> element
       if (oldValue != value) {
         dispatchEvent(Event('change'));
       }
+
       dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
     }
   }
