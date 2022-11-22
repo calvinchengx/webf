@@ -1,4 +1,4 @@
-describe('Tags input', () => {
+xdescribe('Tags input', () => {
   it('basic', async () => {
     const input = document.createElement('input');
     input.style.width = '60px';
@@ -492,7 +492,7 @@ describe('Tags input', () => {
     expect(input.value).toBe('');
   });
 
-  it('input attribute and property value priority', (done) => {
+  xit('input attribute and property value priority', (done) => {
     const input = createElement('input', {
       placeholder: 'hello world',
       style: {
