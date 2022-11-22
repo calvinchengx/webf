@@ -1,4 +1,8 @@
-## 0.13.0-beta.10+1
+## 0.13.0-beta.10+3
+
+* Fix disabled attribute on input element.
+
+## 0.13.0-beta.10+2
 
 * Fix set-cookie header cached by Http request.
 
