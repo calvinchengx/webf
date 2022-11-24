@@ -1,3 +1,7 @@
+## 0.13.0-beta.11
+
+* Fix WebFHTMLElement and WidgetElement.
+
 ## 0.13.0-beta.9
 
 * fix input border style.
