@@ -17,6 +17,10 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${ENABLE_DEBUGGER})
+  add_definitions(-DENABLE_DEBUGGER=1)
+endif()
+
 execute_process(
   COMMAND bash "-c" "npm install"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
@@ -138,6 +142,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/convertion.c
     third_party/quickjs/src/core/runtime.c
     third_party/quickjs/src/core/module.c
+    third_party/quickjs/src/core/debugger.c
     third_party/quickjs/src/core/builtins/js-array.c
     third_party/quickjs/src/core/builtins/js-async-function.c
     third_party/quickjs/src/core/builtins/js-async-generator.c
