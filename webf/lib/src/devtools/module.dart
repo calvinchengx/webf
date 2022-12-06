@@ -64,9 +64,4 @@ abstract class IsolateInspectorModule extends _InspectorModule {
   void sendEventToFrontend(InspectorEvent event) {
     server.sendEventToFrontend(event);
   }
-
-  void callNativeInspectorMethod(int? id, String method, Map<String, dynamic>? params) {
-    assert(server.nativeInspectorMessageHandler != null);
-    server.nativeInspectorMessageHandler!(jsonEncode({'id': id, 'method': name + '.' + method, 'params': params}));
-  }
 }

@@ -3054,6 +3054,10 @@ JSRuntime* JS_NewRuntime2(const JSMallocFunctions* mf, void* opaque) {
 
   rt->current_exception = JS_NULL;
 
+#if ENABLE_DEBUGGER
+  rt->debugger_info.runtime = rt;
+#endif
+
   return rt;
 fail:
   JS_FreeRuntime(rt);
