@@ -57,11 +57,11 @@ abstract class IsolateInspectorModule extends _InspectorModule {
 
   @override
   void sendToFrontend(int? id, JSONEncodable? result) {
-    server.sendToFrontend(id, result?.toJson());
+    server.sendMessageToChromeDevTools(id, result?.toJson());
   }
 
   @override
   void sendEventToFrontend(InspectorEvent event) {
-    server.sendEventToFrontend(event);
+    server.sendEventToChromeDevTools(event);
   }
 }
