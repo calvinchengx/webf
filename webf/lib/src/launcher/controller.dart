@@ -835,6 +835,9 @@ class WebFController {
 
   final GestureListener? _gestureListener;
 
+  // Waiting for the JavaScript debugger client attach before executing the JavaScript code.
+  final bool waitingForDebuggerAttach;
+
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
 
@@ -853,6 +856,7 @@ class WebFController {
     this.onCustomElementAttached,
     this.onCustomElementDetached,
     this.onLoad,
+    this.waitingForDebuggerAttach = false,
     this.onLoadError,
     this.onJSError,
     this.httpClientInterceptor,
@@ -907,7 +911,7 @@ class WebFController {
       devToolsService!.init(this);
     }
 
-    if (autoExecuteEntrypoint) {
+    if (autoExecuteEntrypoint && !waitingForDebuggerAttach) {
       executeEntrypoint();
     }
   }

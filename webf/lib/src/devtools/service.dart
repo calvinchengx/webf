@@ -30,6 +30,10 @@ void spawnIsolateInspectorServer(ChromeDevToolsService devTool, WebFController c
     } else if (data is InspectorPostTaskMessage) {
       if (devTool.isReloading) return;
       dispatchUITask(controller.view.contextId, Pointer.fromAddress(data.context), Pointer.fromAddress(data.callback));
+    } else if (data is DebuggerAttachedEvent) {
+      if (devTool.controller!.waitingForDebuggerAttach) {
+        devTool.controller!.executeEntrypoint();
+      }
     }
   });
 

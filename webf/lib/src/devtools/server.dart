@@ -82,12 +82,16 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
         } else {
           isolateToMainStream.send(InspectorFrontEndMessage(id, module, method, params));
         }
+        print('trigger debugger attached');
+        server!.triggerDebuggerAttachedEvent();
       };
       // Receive message from WebF VSCode extension.
       server!.onVsCodeExtensionMessage = (Map<String, dynamic>? message) {
         if (message != null) {
           server!.sendDapMessageToDebugger(message);
         }
+        print('trigger debugger attached');
+        server!.triggerDebuggerAttachedEvent();
       };
       server!.start();
       IsolateInspectorServer.attachDebugger(Pointer.fromAddress(data.JSContextAddress), server!.debuggerMethods, server!);
@@ -230,6 +234,10 @@ class IsolateInspectorServer {
     moduleRegistrar[module.name] = module;
   }
 
+  void triggerDebuggerAttachedEvent() {
+    isolateToMainStream!.send(DebuggerAttachedEvent());
+  }
+
   /// InspectServer has connected frontend.
   bool get connected => _ws?.readyState == WebSocket.open;
 
@@ -306,6 +314,7 @@ class IsolateInspectorServer {
   void onWebSocketRequest(message) {
     if (message is String) {
       Map<String, dynamic>? data = _parseMessage(message);
+      print('data: $data');
       // Handle messages from WebF Vscode plugin.
       if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
         clientKind = ConnectionClientKind.vscode;
