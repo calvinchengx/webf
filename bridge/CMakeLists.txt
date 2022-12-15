@@ -32,7 +32,7 @@ execute_process(
 ) # g
 
 execute_process(
-  COMMAND bash "-c" "node bin/code_generator -s ../../core -d ../../out"
+  COMMAND bash "-c" "node bin/code_generator -s ../../core -d ../../out --type idl"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
 ) # generate elements code
 

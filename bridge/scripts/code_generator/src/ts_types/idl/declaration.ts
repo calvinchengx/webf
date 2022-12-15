@@ -1,4 +1,4 @@
-import {ParameterType} from "./analyzer";
+import {ParameterType} from "../analyzer";
 
 export enum FunctionArgumentType {
   // Basic types
@@ -14,6 +14,7 @@ export enum FunctionArgumentType {
   any,
   null,
   undefined,
+  keywords,
   array,
 }
 
@@ -28,6 +29,7 @@ export class ParameterMode {
   newObject?: boolean;
   dartImpl?: boolean;
   static?: boolean;
+  keyword?: boolean;
 }
 
 export class PropsDeclaration {
