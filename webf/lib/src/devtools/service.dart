@@ -31,7 +31,8 @@ void spawnIsolateInspectorServer(ChromeDevToolsService devTool, WebFController c
       if (devTool.isReloading) return;
       dispatchUITask(controller.view.contextId, Pointer.fromAddress(data.context), Pointer.fromAddress(data.callback));
     } else if (data is DebuggerAttachedEvent) {
-      if (devTool.controller!.waitingForDebuggerAttach) {
+      if (devTool.controller!.waitingForDebuggerAttach && !devTool.debuggerAttached) {
+        devTool.debuggerAttached = true;
         devTool.controller!.executeEntrypoint();
       }
     }
@@ -66,6 +67,8 @@ class ChromeDevToolsService extends DevToolsService {
 
   bool get isReloading => _reloading;
   bool _reloading = false;
+
+  bool debuggerAttached = false;
 
   @override
   void dispose() {
