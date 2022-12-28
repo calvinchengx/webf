@@ -37,6 +37,11 @@ execute_process(
 ) # generate elements code
 
 execute_process(
+  COMMAND bash "-c" " node bin/code_generator.js -s ../../third_party/quickjs -d ../../third_party/quickjs/out --type dap"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
+) # generate elements code
+
+execute_process(
   COMMAND bash "-c" "read dart_sdk < <(type -p dart) && echo $\{dart_sdk%/*\}/cache/dart-sdk/include | xargs"
   OUTPUT_VARIABLE DART_SDK
 )
@@ -69,7 +74,7 @@ endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   # Avoid quickjs stackoverflow.
-  add_compile_options(-O1)
+#  add_compile_options(-O1)
 endif()
 
 if (DEFINED PLATFORM)
