@@ -3,9 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:convert';
-
 import 'package:webf/devtools.dart';
+import 'package:webf/webf.dart';
 
 abstract class _InspectorModule {
   String get name;
@@ -35,7 +34,7 @@ abstract class _InspectorModule {
 
 // Inspector modules working on flutter.ui thread.
 abstract class UIInspectorModule extends _InspectorModule {
-  final ChromeDevToolsService devtoolsService;
+  final DevToolsService devtoolsService;
   UIInspectorModule(this.devtoolsService);
 
   @override

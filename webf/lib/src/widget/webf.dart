@@ -14,6 +14,8 @@ import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/css.dart';
 
+typedef OnControllerCreated = void Function(WebFController controller);
+
 class WebF extends StatefulWidget {
   // The background color for viewport, default to transparent.
   final Color? background;
@@ -43,6 +45,9 @@ class WebF extends StatefulWidget {
   // https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
   final RouteObserver<ModalRoute<void>>? routeObserver;
 
+  // Trigger when webf controller once created.
+  final OnControllerCreated? onControllerCreated;
+
   // Waiting for the JavaScript debugger client attach before executing the JavaScript code.
   final bool waitingForDebuggerAttach;
 
@@ -60,6 +65,9 @@ class WebF extends StatefulWidget {
   final HttpClientInterceptor? httpClientInterceptor;
 
   final UriParser? uriParser;
+
+  /// The initial cookies to set.
+  final List<Cookie>? initialCookies;
 
   WebFController? get controller {
     return WebFController.getControllerOfName(shortHash(this));
@@ -97,6 +105,7 @@ class WebF extends StatefulWidget {
       this.viewportWidth,
       this.viewportHeight,
       this.bundle,
+      this.onControllerCreated,
       this.onLoad,
       this.navigationDelegate,
       this.javaScriptChannel,
@@ -107,6 +116,7 @@ class WebF extends StatefulWidget {
       this.httpClientInterceptor,
       this.uriParser,
       this.routeObserver,
+      this.initialCookies,
       this.waitingForDebuggerAttach = false,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
       // Maybe got unexpected error when change to other values, use this at your own risk!
@@ -132,12 +142,11 @@ class WebF extends StatefulWidget {
   }
 
   @override
-  _WebFState createState() => _WebFState();
+  WebFState createState() => WebFState();
 }
 
-class _WebFState extends State<WebF> with RouteAware {
+class WebFState extends State<WebF> with RouteAware {
   final Set<WebFWidgetElementToWidgetAdapter> customElementWidgets = {};
-
   void onCustomElementWidgetAdd(WebFWidgetElementToWidgetAdapter adapter) {
     Future.microtask(() {
       setState(() {
@@ -306,6 +315,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
         httpClientInterceptor: _webfWidget.httpClientInterceptor,
         onCustomElementAttached: onCustomElementAttached,
         onCustomElementDetached: onCustomElementDetached,
+        initialCookies: _webfWidget.initialCookies,
         uriParser: _webfWidget.uriParser);
 
     if (kProfileMode) {
@@ -313,6 +323,11 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     }
 
     (context as _WebFRenderObjectElement).controller = controller;
+
+    OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
+    if (onControllerCreated != null) {
+      onControllerCreated(controller);
+    }
 
     return controller.view.getRootRenderObject();
   }

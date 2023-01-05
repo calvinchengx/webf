@@ -16,11 +16,16 @@ export enum FunctionArgumentType {
   undefined,
   keywords,
   array,
+  js_array_proto_methods,
+  // enable LegacyNullToEmpty attribute for dom_string
+  legacy_dom_string,
 }
 
 export class FunctionArguments {
   name: string;
-  type: ParameterType[] = [];
+  type: ParameterType;
+  isDotDotDot: boolean;
+  isSymbolKey: boolean;
   typeMode: ParameterMode;
   required: boolean;
 }
@@ -33,9 +38,10 @@ export class ParameterMode {
 }
 
 export class PropsDeclaration {
-  type: ParameterType[] = [];
+  type: ParameterType;
   typeMode: ParameterMode;
   name: string;
+  isSymbol?: boolean;
   readonly: boolean;
   optional: boolean;
 }
@@ -46,7 +52,7 @@ export class IndexedPropertyDeclaration extends PropsDeclaration {
 
 export class FunctionDeclaration extends PropsDeclaration {
   args: FunctionArguments[] =  [];
-  returnType: ParameterType[] = [];
+  returnType: ParameterType;
   returnTypeMode?: ParameterMode;
 }
 

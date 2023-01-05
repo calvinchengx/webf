@@ -8,6 +8,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -22,6 +23,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/devtools.dart';
 import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
@@ -55,10 +57,65 @@ void setTargetPlatformForDesktop() {
 }
 
 abstract class DevToolsService {
-  void init(WebFController controller);
-  void willReload();
-  void didReload();
-  void dispose();
+  /// Design prevDevTool for reload page,
+  /// do not use it in any other place.
+  /// More detail see [InspectPageModule.handleReloadPage].
+  static DevToolsService? prevDevTools;
+
+  static final Map<int, DevToolsService> _contextDevToolMap = {};
+  static DevToolsService? getDevToolOfContextId(int contextId) {
+    return _contextDevToolMap[contextId];
+  }
+
+  bool debuggerAttached = false;
+
+  /// Used for debugger inspector.
+  UIInspector? _uiInspector;
+  UIInspector? get uiInspector => _uiInspector;
+
+  late Isolate _isolateServer;
+  Isolate get isolateServer => _isolateServer;
+  set isolateServer(Isolate isolate) {
+    _isolateServer = isolate;
+  }
+
+  SendPort? _isolateServerPort;
+  SendPort? get isolateServerPort => _isolateServerPort;
+  set isolateServerPort(SendPort? value) {
+    _isolateServerPort = value;
+  }
+
+  WebFController? _controller;
+  WebFController? get controller => _controller;
+
+  void init(WebFController controller) {
+    _contextDevToolMap[controller.view.contextId] = this;
+    _controller = controller;
+    spawnIsolateInspectorServer(this, controller);
+    _uiInspector = UIInspector(this);
+    controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
+  }
+
+  bool get isReloading => _reloading;
+  bool _reloading = false;
+
+  void willReload() {
+    _reloading = true;
+  }
+
+  void didReload() {
+    _reloading = false;
+    controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
+    _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
+  }
+
+  void dispose() {
+    _uiInspector?.dispose();
+    _contextDevToolMap.remove(controller!.view.contextId);
+    _controller = null;
+    _isolateServerPort = null;
+    _isolateServer.kill();
+  }
 }
 
 // An kraken View Controller designed for multiple kraken view control.
@@ -70,6 +127,8 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   WebFNavigationDelegate? navigationDelegate;
 
   GestureListener? gestureListener;
+
+  List<Cookie>? initialCookies;
 
   double _viewportWidth;
   double get viewportWidth => _viewportWidth;
@@ -98,6 +157,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       required this.rootController,
       this.navigationDelegate,
       this.gestureListener,
+      this.initialCookies,
       // Viewport won't change when kraken page reload, should reuse previous page's viewportBox.
       RenderViewportBox? originalViewport}) {
     if (enableDebug) {
@@ -173,6 +233,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
       viewport: viewport,
       controller: rootController,
       gestureListener: gestureListener,
+      initialCookies: initialCookies,
     );
     _setEventTarget(targetId, document);
 
@@ -212,6 +273,14 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         (event.target as Element).focus();
       }
     });
+  }
+
+  void setCookie(List<Cookie> cookies, [Uri? uri]) {
+    document.cookie.setCookie(cookies, uri);
+  }
+
+  void clearCookie() {
+    document.cookie.clearCookie();
   }
 
   void evaluateJavaScripts(String code) {
@@ -821,6 +890,8 @@ class WebFController {
   OnCustomElementAttached? onCustomElementAttached;
   OnCustomElementDetached? onCustomElementDetached;
 
+  final List<Cookie>? initialCookies;
+
   String? _name;
   String? get name => _name;
   set name(String? value) {
@@ -862,6 +933,7 @@ class WebFController {
     this.httpClientInterceptor,
     this.devToolsService,
     this.uriParser,
+    this.initialCookies,
   })  : _name = name,
         _entrypoint = entrypoint,
         _gestureListener = gestureListener {
@@ -881,6 +953,7 @@ class WebFController {
       rootController: this,
       navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
       gestureListener: _gestureListener,
+      initialCookies: initialCookies
     );
 
     if (kProfileMode) {

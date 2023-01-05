@@ -13,8 +13,10 @@ const { TemplateType } = require('../dist/ts_types/types');
 const { generatorIDLSource } = require('../dist/ts_types/idl/generator');
 const { generatorDAP } = require('../dist/ts_types/dap/generator');
 const { generateDAPSource } = require('../dist/ts_types/dap/generateSource');
+const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/ts_types/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
+const { union } = require("lodash");
 
 program
   .version(packageJSON.version)
@@ -66,7 +68,7 @@ function genCodeFromTypeDefine() {
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
-    analyzer(b, definedPropertyCollector, TemplateType[type.toUpperCase()], dapInfoCollector);
+    analyzer(b, definedPropertyCollector, unionTypeCollector, TemplateType[type.toUpperCase()], dapInfoCollector);
   }
 
   for (let i = 0; i < blobs.length; i ++) {
@@ -90,6 +92,22 @@ function genCodeFromTypeDefine() {
 
     writeFileIfChanged(genFilePath + '.h', result.header);
     writeFileIfChanged(genFilePath + '.cc', result.source);
+  }
+
+  if (type.toUpperCase() === TemplateType[TemplateType.IDL]) {
+    let unionTypes = Array.from(unionTypeCollector.types);
+    unionTypes.forEach(union => {
+      union.sort((p, n) => {
+        if (typeof p.value === 'string') return 1;
+        return -(n.value - p.value);
+      })
+    });
+    for(let i = 0; i < unionTypes.length; i ++) {
+      let result = generateUnionTypes(unionTypes[i]);
+      let filename = generateUnionTypeFileName(unionTypes[i]);
+      writeFileIfChanged(path.join(dist, filename) + '.h', result.header);
+      writeFileIfChanged(path.join(dist, filename) + '.cc', result.source);
+    }
   }
 }
 
@@ -184,7 +202,12 @@ class DAPInfoCollector {
   others = new Set();
 }
 
+class UnionTypeCollector {
+  types = new Set()
+}
+
 let definedPropertyCollector = new DefinedPropertyCollector();
+let unionTypeCollector = new UnionTypeCollector();
 let dapInfoCollector = new DAPInfoCollector();
 let names_needs_install = new Set();
 

@@ -260,6 +260,8 @@ mixin BaseInputElement on WidgetElement {
         label: label != null ? Text(label!) : null,
         border: InputBorder.none,
         isDense: true,
+        isCollapsed: true,
+        contentPadding: EdgeInsets.fromLTRB(0, 0, 0, 0),
         hintText: placeholder,
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
@@ -352,12 +354,25 @@ mixin BaseInputElement on WidgetElement {
     _focusNode?.dispose();
   }
 
+  Widget _wrapInputHeight(Widget widget) {
+    double? height = renderStyle.height.value;
+
+    if (height == null) return widget;
+
+    return SizedBox(
+      child: Center(
+        child: widget,
+      ),
+      height: height
+    );
+  }
+
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
     switch (type) {
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    return _createInputWidget(context, minLines, maxLines);
+    return _wrapInputHeight(_createInputWidget(context, minLines, maxLines));
   }
 }
 
