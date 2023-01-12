@@ -48,8 +48,9 @@ export function generateDAPMembersTypes(type: ParameterType, mode: ParameterMode
 
   if (type.isArray) {
     let arrayType = generateDAPMembersTypes(type.value as ParameterType, mode, typeName);
+    let hasNoPointer = arrayType != 'const char*' && arrayType.indexOf('*') >= 0;
 
-    return `size_t ${typeName}Len;\n ${arrayType}${arrayType.indexOf('*') >= 0 ? '' : '*'}`
+    return `size_t ${typeName}Len;\n ${arrayType}${hasNoPointer ? '' : '*'}`
   }
 
   return 'void*';
