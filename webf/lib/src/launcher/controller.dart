@@ -1221,7 +1221,7 @@ class WebFController {
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
         // Prefer sync decode in loading entrypoint.
-        evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
+        evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: Uri.parse(url).path);
       } else if (entrypoint.isBytecode) {
         evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
