@@ -214,19 +214,20 @@ function generateMemberInit(prop: PropsDeclaration, externalInitialize: string[]
   return initCode;
 }
 
-function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, externalInitialize: string[], info: DAPInfoCollector): string {
-  function wrapIf(code: string) {
-    if (prop.type.value === FunctionArgumentType.dom_string || typeof prop.type.value === 'string') {
-      return `if (${bodyName}->${prop.name} != NULL) {
+function wrapIf(code: string, expression: string, type: ParameterType) {
+  if (type.value === FunctionArgumentType.dom_string || typeof type.value === 'string') {
+    return `if (${expression} != NULL) {
   ${code}
 }`;
-    } else if (prop.type.value === FunctionArgumentType.double || prop.type.value === FunctionArgumentType.int64) {
-      return `if (!isnan(${bodyName}->${prop.name})) {
+  } else if (type.value === FunctionArgumentType.double || type.value === FunctionArgumentType.int64) {
+    return `if (!isnan(${expression})) {
   ${code}
 }`
-    }
-    return code;
   }
+  return code;
+}
+
+function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, externalInitialize: string[], info: DAPInfoCollector): string {
 
   function generateQuickJSInitFromType(type: ParameterType) {
     if (type.value === FunctionArgumentType.double) {
@@ -260,9 +261,17 @@ function generateMemberStringifyCode(prop: PropsDeclaration, bodyName: string, e
     } else {
       if (type.isArray) {
         let isReference = typeof (prop.type.value as ParameterType).value === 'string';
+        let arrCallCode = `JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type.value as ParameterType)}(ctx, ${isReference ? '&' : ''}${bodyName}->${prop.name}[i]));`;
+        const typeKind = getTypeKind(type);
+        if (prop.optional && typeKind === PropTypeKind.normalArray) {
+          arrCallCode = `if (${bodyName}->${prop.name} != NULL) {
+            ${arrCallCode}
+          }`;
+        }
+
         callCode = `JSValue arr = JS_NewArray(ctx);
-for(int i = 0; i <  ${bodyName}->${prop.name}Len; i ++) {
-  JS_SetPropertyUint32(ctx, arr, i, ${generateQuickJSInitFromType(prop.type.value as ParameterType)}(ctx, ${isReference ? '&' : ''}${bodyName}->${prop.name}[i]));
+for(int i = 0; i < ${bodyName}->${prop.name}Len; i ++) {
+  ${arrCallCode}
 }
 JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
       } else {
@@ -278,7 +287,7 @@ JS_SetPropertyStr(ctx, object, "${prop.name}", arr);`
 
   let callCode = genCallCode(prop.type, prop);
 
-  return addIndent(prop.optional ? wrapIf(callCode) : callCode, 2);
+  return addIndent(prop.optional ? wrapIf(callCode, `${bodyName}->${prop.name}`, prop.type) : callCode, 2);
 }
 
 function generateRequestParser(info: DAPInfoCollector, requests: string[], externalInitialize: string[]) {
