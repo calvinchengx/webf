@@ -77,7 +77,6 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
       if (message != null) {
         inspector!.sendDapMessageToDebugger(message);
       }
-      print('trigger debugger attached');
       isolateToMainStream.send(DebuggerAttachedEvent());
     }
 
@@ -200,7 +199,6 @@ class IsolateInspector {
       Pointer<DebuggerMessageBuffer> message = malloc.allocate(sizeOf<DebuggerMessageBuffer>());
       int result = fn(debuggerContext, message);
       if (result == 0) {
-        malloc.free(message.ref.buffer);
         malloc.free(message);
         Timer(Duration(milliseconds: 1), readDebuggerBackendMessage);
         return;
@@ -214,13 +212,13 @@ class IsolateInspector {
           // TODO: Add adaptor from DAP to CDP..
         }
       } else {
-        // _pendingDebuggerMessages.add(str);
+        _pendingDebuggerMessages.add(str);
       }
       malloc.free(message.ref.buffer);
       malloc.free(message);
     }
 
-    Timer(Duration(seconds: 1), readDebuggerBackendMessage);
+    Timer(Duration(milliseconds: 1), readDebuggerBackendMessage);
   }
 
   void _flushPendingDebuggerMessage() {
