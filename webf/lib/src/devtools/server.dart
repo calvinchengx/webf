@@ -234,20 +234,20 @@ class IsolateInspector {
   }
 
   void sendToFrontend(int? id, Map? result) {
-    String data = jsonEncode({
-      if (id != null) 'id': id,
-      // Give an empty object for response.
-      'result': result ?? {},
-    });
-    _ws?.add(data);
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      String data = jsonEncode({
+        if (id != null) 'id': id,
+        // Give an empty object for response.
+        'result': result ?? {},
+      });
+      _ws?.add(data);
+    }
   }
 
   void sendEventToFrontend(InspectorEvent event) {
-    _ws?.add(jsonEncode(event));
-  }
-
-  void sendRawJSONToFrontend(String message) {
-    _ws?.add(message);
+    if (clientKind == ConnectionClientKind.chromeDevTools) {
+      _ws?.add(jsonEncode(event));
+    }
   }
 
   void dispose() async {
