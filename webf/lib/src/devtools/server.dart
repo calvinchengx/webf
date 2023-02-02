@@ -174,7 +174,7 @@ class IsolateInspector {
   void sendDapMessageToDebugger(Map<String, dynamic> message) {
     assert(debuggerContext != nullptr);
 
-    print('send message to debugger: $message');
+    // print('send message to debugger: $message');
 
     // Write commands to Debugger Backend.
     DartDebuggerWriteFrontEndCommands fn = debuggerMethods.ref.writeFrontEndCommands.asFunction();
@@ -204,7 +204,7 @@ class IsolateInspector {
         return;
       }
       String str = message.ref.buffer.toDartString(length: message.ref.length);
-      print('backend $str');
+      // print('backend $str');
       if (_ws != null) {
         if (clientKind == ConnectionClientKind.vscode) {
           _ws?.add(str);
@@ -286,7 +286,7 @@ class IsolateInspector {
   void onWebSocketRequest(message) {
     if (message is String) {
       Map<String, dynamic>? data = _parseMessage(message);
-      print('data: $data');
+      // print('data: $data');
       // Handle messages from WebF Vscode plugin.
       if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
         clientKind = ConnectionClientKind.vscode;
@@ -318,7 +318,7 @@ class IsolateInspectorServer extends IsolateInspector {
   int _bindServerRetryTime = 0;
 
   Future<void> _bindServer(int port) async {
-    print('bind server: $address $port');
+    // print('bind server: $address $port');
     try {
       _httpServer = await HttpServer.bind(address, port);
       this.port = port;
