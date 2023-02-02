@@ -55,6 +55,10 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
   JS_DefinePropertyValue(ctx, classObject, prototypeKey, prototypeObject, JS_PROP_C_W_E);
   JS_FreeAtom(ctx, prototypeKey);
 
+  JSAtom constructorKey = JS_NewAtom(ctx, "constructor");
+  JS_DefinePropertyValue(ctx, prototypeObject, constructorKey, JS_DupValue(ctx, classObject), JS_PROP_C_W_E);
+  JS_FreeAtom(ctx, constructorKey);
+
   // Inherit to parentClass.
   if (type->parent_class != nullptr) {
     assert(prototype_map_.count(type->parent_class) > 0);
@@ -63,6 +67,8 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
 
   // Configure to be called as a constructor.
   JS_SetConstructorBit(ctx, classObject, true);
+  JS_DefinePropertyValue(ctx, classObject, JS_ATOM_length, JS_NewInt32(ctx, 0), JS_PROP_CONFIGURABLE);
+  JS_DefinePropertyValue(ctx, classObject, JS_ATOM_name, JS_NewString(ctx, type->className), JS_PROP_CONFIGURABLE);
 
   // Store WrapperTypeInfo as private data.
   JS_SetOpaque(classObject, (void*)type);
