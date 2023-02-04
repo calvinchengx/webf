@@ -64,5 +64,7 @@ int32_t profileModeEnabled();
 // Debugger API
 WEBF_EXPORT_C
 void* attachDebugger(void* page, void* methods);
+WEBF_EXPORT_C
+void flushDebuggerCommands(void* page);
 
 #endif  // WEBF_BRIDGE_EXPORT_H

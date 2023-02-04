@@ -78,6 +78,7 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
         inspector!.sendDapMessageToDebugger(message);
       }
       isolateToMainStream.send(DebuggerAttachedEvent());
+      isolateToMainStream.send(NewFrontEndMessageEvent());
     }
 
     // Init the dev server
@@ -174,7 +175,7 @@ class IsolateInspector {
   void sendDapMessageToDebugger(Map<String, dynamic> message) {
     assert(debuggerContext != nullptr);
 
-    // print('send message to debugger: $message');
+    print('send message to debugger: $message');
 
     // Write commands to Debugger Backend.
     DartDebuggerWriteFrontEndCommands fn = debuggerMethods.ref.writeFrontEndCommands.asFunction();
@@ -282,11 +283,10 @@ class IsolateInspector {
     }
   }
 
-
   void onWebSocketRequest(message) {
     if (message is String) {
       Map<String, dynamic>? data = _parseMessage(message);
-      // print('data: $data');
+      print('receive data: $data');
       // Handle messages from WebF Vscode plugin.
       if (data != null && data['vscode'] && onVsCodeExtensionMessage != null) {
         clientKind = ConnectionClientKind.vscode;
