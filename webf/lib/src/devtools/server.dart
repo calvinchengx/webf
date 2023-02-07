@@ -83,7 +83,7 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
 
     // Init the dev server
     if (data is InspectorServerInit) {
-      IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
+      IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL, data.jsContextAddr);
       server.onStarted = () {
         // Tell the main thread the dev server started.
         isolateToMainStream.send(InspectorServerStart(server.port));
@@ -94,18 +94,14 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
       server.onVsCodeExtensionMessage = handleVsCodeExtensionMessage;
       server.start();
       inspector = server;
-      IsolateInspector.attachDebugger(Pointer.fromAddress(data.JSContextAddress), server.debuggerMethods, server);
-      server.readDebuggerBackendMessage();
     } else if (data is InspectorServerConnect) {
-      IsolateInspectorClient client = IsolateInspectorClient(data.url);
+      IsolateInspectorClient client = IsolateInspectorClient(data.url, data.jsContextAddress);
       client.onStarted = () {
         isolateToMainStream.send(InspectorClientConnected());
       };
       client.onChromeDevToolsMessage = handleChromeDevToolsMessage;
       client.onVsCodeExtensionMessage = handleVsCodeExtensionMessage;
       client.start();
-      IsolateInspector.attachDebugger(Pointer.fromAddress(data.JSContextAddress), client.debuggerMethods, client);
-      client.readDebuggerBackendMessage();
       inspector = client;
     } else if (inspector != null && inspector!.connected) {
       if (data is InspectorEvent) {
@@ -143,12 +139,13 @@ class IsolateInspector {
 
   }
 
-  IsolateInspector() {
+  IsolateInspector(this.jsContextAddress) {
     _initDebuggerMethods(this, debuggerMethods);
   }
 
   bool _disposed = false;
 
+  int jsContextAddress;
   VoidCallback? onStarted;
   MessageCallback? onChromeDevToolsMessage;
   MessageCallback? onVsCodeExtensionMessage;
@@ -301,7 +298,7 @@ class IsolateInspector {
 }
 
 class IsolateInspectorServer extends IsolateInspector {
-  IsolateInspectorServer(this.port, this.address, this.bundleURL);
+  IsolateInspectorServer(this.port, this.address, this.bundleURL, super.jsContextAddress);
 
   // final Inspector inspector;
   final String address;
@@ -340,6 +337,8 @@ class IsolateInspectorServer extends IsolateInspector {
     }
 
     _httpServer.listen((HttpRequest request) {
+      IsolateInspector.attachDebugger(Pointer.fromAddress(jsContextAddress), debuggerMethods, this);
+      readDebuggerBackendMessage();
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff)
             .then((WebSocket webSocket) {
@@ -458,7 +457,7 @@ class IsolateInspectorServer extends IsolateInspector {
 class IsolateInspectorClient extends IsolateInspector {
   final String url;
 
-  IsolateInspectorClient(this.url);
+  IsolateInspectorClient(this.url, super.jsContextAddress);
 
   @override
   bool get connected => _ws?.readyState == WebSocket.open;
