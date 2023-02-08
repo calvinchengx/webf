@@ -74,7 +74,7 @@ endif ()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   # Avoid quickjs stackoverflow.
-#  add_compile_options(-O1)
+  add_compile_options(-O1)
 endif()
 
 if (DEFINED PLATFORM)
