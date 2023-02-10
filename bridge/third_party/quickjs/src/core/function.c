@@ -226,6 +226,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
   JSValue *local_buf, *stack_buf, *var_buf, *arg_buf, *sp, ret_val, *pval;
   JSVarRef** var_refs;
   size_t alloca_size;
+  int debugger_connected = caller_ctx->rt->debugger_info.is_connected;
 
 #if !DIRECT_DISPATCH
 #define SWITCH(pc) switch (opcode = *pc++)
@@ -255,7 +256,7 @@ JSValue JS_CallInternal(JSContext* caller_ctx,
     [ OP_COUNT ... 255 ] = &&case_default
   };
 #define SWITCH(pc) goto* active_dispatch_table[opcode = *(pc)++];
-#define CASE(op) case_debugger_ ## op: js_debugger_check(ctx, pc, this_obj, opcode); case_ ## op
+#define CASE(op) case_debugger_ ## op: if (unlikely(debugger_connected)) js_debugger_check(ctx, pc, this_obj, opcode); case_ ## op
 #define DEFAULT case_default
 #define BREAK SWITCH(pc)
   const void* const *active_dispatch_table = caller_ctx->rt->debugger_info.is_connected
@@ -355,7 +356,7 @@ restart:
     JSValue* call_argv;
 
 #if ENABLE_DEBUGGER
-    js_debugger_check(ctx, NULL, this_obj, -1);
+    if (unlikely(debugger_connected)) js_debugger_check(ctx, NULL, this_obj, -1);
 #endif
 
     SWITCH(pc) {
