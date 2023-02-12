@@ -93,7 +93,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/string_view.cc
   foundation/native_value.cc
   foundation/ui_command_buffer.cc
-  polyfill/dist/polyfill.cc
+  polyfill/dist/polyfill.c
   )
 
 list(APPEND GUMBO_PARSER
