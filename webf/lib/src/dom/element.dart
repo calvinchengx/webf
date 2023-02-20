@@ -4,7 +4,6 @@
  */
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -147,6 +146,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
   /// The Element.classList is a read-only property that returns a collection of the class attributes of the element.
   final List<String> _classList = [];
+
+  String namespaceURI = '';
 
   List<String> get classList => _classList;
 
@@ -556,6 +557,20 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
     ensureChildAttached();
+
+    // Reconfigure scrollable contents.
+    bool needUpdateOverflowRenderBox = false;
+    if (renderStyle.overflowX != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowX(_handleScroll);
+    }
+    if (renderStyle.overflowY != CSSOverflowType.visible) {
+      needUpdateOverflowRenderBox = true;
+      updateRenderBoxModelWithOverflowY(_handleScroll);
+    }
+    if (needUpdateOverflowRenderBox) {
+      updateOverflowRenderBox();
+    }
   }
 
   @override
@@ -574,7 +589,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       renderBoxModel.clearIntersectionChangeListeners();
 
       // Remove fixed children from root when element disposed.
-      if (ownerDocument.viewport != null) {
+      if (ownerDocument.viewport != null && renderStyle.position == CSSPositionType.fixed) {
         _removeFixedChild(renderBoxModel, ownerDocument.viewport!);
       }
       // Remove renderBox.
@@ -582,6 +597,10 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
       // Clear pointer listener
       clearEventResponder(renderBoxModel);
+
+      // Remove scrollable
+      renderBoxModel.disposeScrollable();
+      disposeScrollable();
     }
   }
 
@@ -810,25 +829,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     }
   }
 
-  bool _obtainSliverChild() {
-    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
-      // Sliver should not create renderer here, but need to trigger
-      // render sliver list dynamical rebuild child by element tree.
-      parentElement?._renderLayoutBox?.markNeedsLayout();
-      return true;
-    }
-    return false;
-  }
-
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {RenderBox? after}) {
     applyStyle(style);
 
-    if (_obtainSliverChild()) {
-      // Rebuild all the sliver children.
-      RenderLayoutBox? parentRenderBoxModel = parentElement!.renderBoxModel as RenderLayoutBox?;
-      parentRenderBoxModel?.removeAll();
+    if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
+      // Sliver should not create renderer here, but need to trigger
+      // render sliver list dynamical rebuild child by element tree.
+      parentElement?._renderLayoutBox?.markNeedsLayout();
     } else {
       willAttachRenderer();
     }
@@ -983,6 +992,26 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
           }
         }
 
+        // Remove all element after the new node, when parent is sliver
+        // Sliver's children if change sort need relayout
+        if(renderStyle.display == CSSDisplay.sliver
+            && referenceNode is Element
+            && referenceNode.renderer != null
+            && referenceNode.isRendererAttached) {
+          while(referenceIndex + 1 < childNodes.length) {
+            Node reference = childNodes[referenceIndex + 1];
+            if(reference.isRendererAttached && reference is Element) {
+              if(reference.renderer != null &&
+                  reference.renderer!.parent != null &&
+                  reference.renderer!.parent is RenderSliverRepaintProxy) {
+                (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
+              }
+              reference.unmountRenderObject(deep: true);
+            }
+            referenceIndex++;
+          }
+        }
+
         // Renderer of referenceNode may not moved to a difference place compared to its original place
         // in the dom tree due to position absolute/fixed.
         // Use the renderPositionPlaceholder to get the same place as dom tree in this case.
@@ -1131,7 +1160,6 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     return attributes.containsKey(qualifiedName);
   }
 
-  // FIXME: only compatible with kraken plugins
   @deprecated
   void setStyle(String property, value) {
     setRenderStyle(property, value);
@@ -1870,6 +1898,15 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
       }
     }
     return false;
+  }
+
+  RenderStyle? computedStyle(String? pseudoElementSpecifier) {
+    RenderStyle? style = renderBoxModel?.renderStyle;
+    if (style == null) {
+      recalculateStyle();
+      style = renderBoxModel?.renderStyle;
+    }
+    return style;
   }
 }
 

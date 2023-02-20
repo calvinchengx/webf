@@ -472,16 +472,6 @@ class CSSMatrix {
       angleA += angleA < 0 ? 180 : -180;
     }
 
-    // Don’t rotate the long way around.
-    if (angleA == 0) angleA = 360;
-    if (angleB == 0) angleB = 360;
-
-    if ((angleA - angleB).abs() > 180) {
-      if (angleA > angleB)
-        angleA -= 360;
-      else
-        angleB -= 360;
-    }
 
     List<double> translate = _lerpFloat64List(matrixA[0], matrixB[0], t);
     List<double> scale = _lerpFloat64List(matrixA[1], matrixB[1], t);
@@ -564,6 +554,10 @@ class CSSMatrix {
     // Compute rotation and renormalize matrix.
     double angle = atan2(row0y, row0x);
 
+    // fix animation transform: rotate(360deg);
+    if (angle == -2.4492935982947064e-16) {
+      angle = 360 * pi / 180;
+    }
     if (angle != 0) {
       // Rotate(-angle) = [cos(angle), sin(angle), -sin(angle), cos(angle)]
       //                = [row0x, -row0y, row0y, row0x]
@@ -614,14 +608,9 @@ class CSSMatrix {
     var methodArgs = method.args;
     for (int i = 0; i < methodArgs.length; i++) {
       String arg = methodArgs[i];
-      final calcValue = CSSCalcValue.tryParse(renderStyle, '', arg)?.computedValue('').toString();
-      if (calcValue != null) {
-        methodArgs[i] = calcValue;
-      } else {
-        final varValue = CSSVariable.tryParse(renderStyle, arg)?.computedValue('').toString();
-        if (varValue != null) {
-          methodArgs[i] = varValue;
-        }
+      final varValue = CSSVariable.tryParse(renderStyle, arg)?.computedValue('').toString();
+      if (varValue != null) {
+        methodArgs[i] = varValue;
       }
     }
 

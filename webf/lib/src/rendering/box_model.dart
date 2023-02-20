@@ -526,8 +526,8 @@ class RenderLayoutBox extends RenderBoxModel
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
     double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
-    if(transform!=null) {
-      maxScrollableX+= transform.getTranslation()[0];
+    if (transform != null) {
+      maxScrollableX += transform.getTranslation()[0];
     }
 
     if (childRenderStyle.right.isNotAuto) {
@@ -545,8 +545,8 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-    if(transform!=null) {
-      maxScrollableY+= transform.getTranslation()[1];
+    if (transform != null) {
+      maxScrollableY += transform.getTranslation()[1];
     }
     if (childRenderStyle.bottom.isNotAuto) {
       if (isScrollingContentBox && (parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
@@ -925,11 +925,11 @@ class RenderBoxModel extends RenderBox
 
       BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
       BoxConstraints constraints = BoxConstraints(
-        minWidth: parentConstraints.maxWidth != double.infinity
+        minWidth: (parentConstraints.maxWidth != double.infinity && parentRenderStyle.width.value != null)
             ? parentConstraints.maxWidth - horizontalBorderLength - horizontalPaddingLength
             : 0,
         maxWidth: double.infinity,
-        minHeight: parentConstraints.maxHeight != double.infinity
+        minHeight: (parentConstraints.maxHeight != double.infinity && parentRenderStyle.height.value != null)
             ? parentConstraints.maxHeight - verticalBorderLength - verticalPaddingLength
             : 0,
         maxHeight: double.infinity,
@@ -1073,7 +1073,7 @@ class RenderBoxModel extends RenderBox
     // @FIXME: Normally constraints is calculated in getConstraints by parent RenderLayoutBox in Kraken,
     // except in sliver layout, constraints is calculated by [RenderSliverList] which kraken can not control,
     // so it needs to invoke getConstraints here for sliver container's direct child.
-    if (parent is RenderSliverList) {
+    if (parent is RenderSliverRepaintProxy || parent is RenderSliverList) {
       contentConstraints = getConstraints();
     } else {
       // Constraints is already calculated in parent layout.
@@ -1198,7 +1198,7 @@ class RenderBoxModel extends RenderBox
     ));
   }
 
-  // Reaint native EngineLayer sources with LayerHandle.
+  // Repaint native EngineLayer sources with LayerHandle.
   final LayerHandle<ColorFilterLayer> _colorFilterLayer = LayerHandle<ColorFilterLayer>();
 
   void paintColorFilter(PaintingContext context, Offset offset, PaintingContextCallback callback) {
@@ -1331,6 +1331,10 @@ class RenderBoxModel extends RenderBox
     if (positionType == CSSPositionType.relative ||
         positionType == CSSPositionType.static ||
         positionType == CSSPositionType.sticky) {
+      // If the previousSibling is positioned element, should relative to positionHolder.
+      if (after is RenderBoxModel) {
+        after = after.renderPositionPlaceholder ?? after;
+      }
       // If the element's position is 'relative' or 'static',
       // the containing block is formed by the content edge of the nearest block container ancestor box.
       attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
@@ -1488,7 +1492,7 @@ class RenderBoxModel extends RenderBox
               }
 
               // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
-              if (hitTestChildren(result, position: position) || hitTestSelf(transformPosition)) {
+              if (hasSize && hitTestChildren(result, position: position) || hitTestSelf(transformPosition)) {
                 result.add(BoxHitTestEntry(this, position));
                 return true;
               }
@@ -1541,9 +1545,8 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
-    properties.add(DiagnosticsProperty('widthSizeType', widthSizeType, missingIfNull: true));
-    properties.add(DiagnosticsProperty('heightSizeType', heightSizeType, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
+    properties.add(DiagnosticsProperty('position', renderStyle.position));
 
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));

@@ -127,7 +127,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   add_subdirectory(./third_party/quickjs)
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
+  list(APPEND BRIDGE_LINK_LIBS modb)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
@@ -179,7 +181,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
-    core/css/legacy/css_style_declaration.cc
+    core/css/css_style_declaration.cc
+    core/css/inline_css_style_declaration.cc
+    core/css/computed_css_style_declaration.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
@@ -318,6 +322,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_document_fragment.cc
     out/qjs_bounding_client_rect.cc
     out/qjs_css_style_declaration.cc
+    out/qjs_inline_css_style_declaration.cc
+    out/qjs_computed_css_style_declaration.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
@@ -371,6 +377,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties.cc
     out/defined_properties_initializer.cc
     out/element_attribute_names.cc
+    out/element_namespace_uris.cc
     )
 
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
@@ -404,6 +411,7 @@ if (${IS_ANDROID})
 elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
 endif()
+
 
 ### webf
 target_include_directories(webf PRIVATE

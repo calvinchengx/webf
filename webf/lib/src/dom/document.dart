@@ -43,7 +43,9 @@ class _InactiveRenderObjects {
           finalizeInactiveRenderObjects();
           _isScheduled = false;
         });
+        RendererBinding.instance.scheduleFrame();
       });
+      RendererBinding.instance.scheduleFrame();
     }
 
     assert(!renderObject.debugDisposed!);
@@ -290,6 +292,12 @@ class Document extends Node {
 
   Element createElement(String type, [BindingContext? context]) {
     Element element = element_registry.createElement(type, context);
+    element.ownerDocument = this;
+    return element;
+  }
+
+  Element createElementNS(String uri, String type, [BindingContext? context]) {
+    Element element = element_registry.createElementNS(uri, type, context);
     element.ownerDocument = this;
     return element;
   }

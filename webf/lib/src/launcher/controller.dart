@@ -9,7 +9,6 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
@@ -446,6 +445,18 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     }
     assert(!_existsTarget(targetId), 'ERROR: Can not create element with same id "$targetId"');
     Element element = document.createElement(tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
+    _setEventTarget(targetId, element);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_END, uniqueId: targetId);
+    }
+  }
+
+  void createElementNS(int targetId, Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_START, uniqueId: targetId);
+    }
+    assert(!_existsTarget(targetId), 'ERROR: Can not create element with same id "$targetId"');
+    Element element = document.createElementNS(uri, tagName.toUpperCase(), BindingContext(_contextId, nativePtr));
     _setEventTarget(targetId, element);
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_CREATE_ELEMENT_END, uniqueId: targetId);
