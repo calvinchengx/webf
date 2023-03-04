@@ -28,7 +28,6 @@
 
 #include "quickjs/quickjs.h"
 #include "shape.h"
-#include "types.h"
 
 InlineCache *init_ic(JSRuntime *rt);
 int rebuild_ic(InlineCache *ic);
