@@ -17,6 +17,14 @@ else ()
   add_definitions(-DENABLE_PROFILE=0)
 endif ()
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT supported OUTPUT error)
+  if( supported )
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  endif()
+endif()
+
 if (${ENABLE_DEBUGGER})
   add_definitions(-DENABLE_DEBUGGER=1)
 endif()
@@ -37,7 +45,7 @@ execute_process(
 ) # generate elements code
 
 execute_process(
-  COMMAND bash "-c" " node bin/code_generator.js -s ../../third_party/quickjs -d ../../third_party/quickjs/out --type dap"
+  COMMAND bash "-c" "node bin/code_generator.js -s ../../third_party/quickjs -d ../../third_party/quickjs/out --type dap"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/code_generator
 ) # generate elements code
 
@@ -244,6 +252,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_anchor_element.cc
     core/html/html_image_element.cc
     core/html/html_script_element.cc
+    core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
     core/html/image.cc
@@ -343,6 +352,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_body_element.cc
     out/qjs_html_html_element.cc
     out/qjs_html_image_element.cc
+    out/qjs_html_iframe_element.cc
     out/qjs_html_canvas_element.cc
     out/qjs_html_link_element.cc
     out/qjs_image.cc

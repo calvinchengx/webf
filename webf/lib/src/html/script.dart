@@ -20,6 +20,7 @@ const Map<String, dynamic> _defaultStyle = {
 const String _MIME_TEXT_JAVASCRIPT = 'text/javascript';
 const String _MIME_APPLICATION_JAVASCRIPT = 'application/javascript';
 const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
+const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
 const String _JAVASCRIPT_MODULE = 'module';
 
 typedef ScriptExecution = void Function(bool async);
@@ -36,7 +37,7 @@ class ScriptRunner {
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
-  static void _evaluateScriptBundle(int contextId, WebFBundle bundle, {bool async = false}) async {
+  static Future<void> _evaluateScriptBundle(int contextId, WebFBundle bundle, {bool async = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       final String contentInString = await resolveStringFromData(bundle.data!, preferSync: !async);
@@ -57,25 +58,34 @@ class ScriptRunner {
     }
   }
 
-  void _queueScriptForExecution(ScriptElement element) async {
+  void _queueScriptForExecution(ScriptElement element, {bool isInline = false}) async {
     // Increment load event delay count before eval.
-    _document.incrementLoadEventDelayCount();
-
-    String url = element.src.toString();
+    _document.incrementDOMContentLoadedEventDelayCount();
 
     // Obtain bundle.
-    WebFBundle bundle = WebFBundle.fromUrl(url);
+    WebFBundle bundle;
+
+    if (isInline) {
+      String? scriptCode = element.collectElementChildText();
+      if (scriptCode == null) {
+        return;
+      }
+      bundle = WebFBundle.fromContent(scriptCode);
+    } else {
+      String url = element.src.toString();
+      bundle = WebFBundle.fromUrl(url);
+    }
 
     // The bundle execution task.
-    void task(bool async) {
+    void task(bool async) async {
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
       try {
-        _evaluateScriptBundle(_contextId, bundle, async: async);
+        await _evaluateScriptBundle(_contextId, bundle, async: async);
       } catch (err, stack) {
         debugPrint('$err\n$stack');
-        _document.decrementLoadEventDelayCount();
+        _document.decrementDOMContentLoadedEventDelayCount();
         return;
       } finally {
         bundle.dispose();
@@ -87,7 +97,7 @@ class ScriptRunner {
       });
 
       // Decrement load event delay count after eval.
-      _document.decrementLoadEventDelayCount();
+      _document.decrementDOMContentLoadedEventDelayCount();
     }
 
     // @TODO: Differ async and defer.
@@ -99,7 +109,7 @@ class ScriptRunner {
 
     // Script loading phrase.
     // Increment count when request.
-    _document.incrementRequestCount();
+    _document.incrementDOMContentLoadedEventDelayCount();
     try {
       await bundle.resolve(_contextId);
 
@@ -112,7 +122,7 @@ class ScriptRunner {
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_ERROR));
       });
-      _document.decrementLoadEventDelayCount();
+      _document.decrementDOMContentLoadedEventDelayCount();
       // Cancel failed task.
       _syncScriptTasks.remove(task);
       return;
@@ -123,7 +133,7 @@ class ScriptRunner {
       }
 
       // Decrement count when response.
-      _document.decrementRequestCount();
+      _document.decrementDOMContentLoadedEventDelayCount();
     }
 
     // Script executing phrase.
@@ -240,11 +250,14 @@ class ScriptElement extends Element {
         (_type == _MIME_TEXT_JAVASCRIPT ||
             _type == _MIME_APPLICATION_JAVASCRIPT ||
             _type == _MIME_X_APPLICATION_JAVASCRIPT ||
+            _type == _MIME_X_APPLICATION_KBC ||
             _type == _JAVASCRIPT_MODULE)) {
       // Add bundle to scripts queue.
       ownerDocument.scriptRunner._queueScriptForExecution(this);
 
       SchedulerBinding.instance.scheduleFrame();
+    } else if (childNodes.isNotEmpty) {
+      ownerDocument.scriptRunner._queueScriptForExecution(this, isInline: true);
     }
   }
 
@@ -256,11 +269,7 @@ class ScriptElement extends Element {
     if (src.isNotEmpty) {
       _fetchAndExecuteSource();
     } else if (_type == _MIME_TEXT_JAVASCRIPT || _type == _JAVASCRIPT_MODULE) {
-      // Eval script context: <script> console.log(1) </script>
-      String? script = collectElementChildText();
-      if (script != null && script.isNotEmpty) {
-        evaluateScripts(contextId, script);
-      }
+      _fetchAndExecuteSource();
     }
   }
 }

@@ -25,7 +25,8 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     MemberMutationScope scope{ExecutingContext::From(ctx)};
     std::vector<AtomicString> props;
     self->NamedPropertyEnumerator(props, exception_state);
-    auto *tabs = new JSPropertyEnum[props.size()];
+    auto size = props.size() == 0 ? 1 : props.size();
+    auto tabs = (JSPropertyEnum *)js_malloc(ctx, sizeof(JSPropertyEnum *) * size);
     for(int i = 0; i < props.size(); i ++) {
       tabs[i].atom = JS_DupAtom(ctx, props[i].Impl());
       tabs[i].is_enumerable = true;
@@ -166,11 +167,10 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 
   <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   ExceptionState exception_state;
-  auto&& native_value = <%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, exception_state);
   <% if (isTypeNeedAllocate(prop.type)) { %>
-  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(ctx, native_value);
+  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(ctx, <%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, exception_state));
   <% } else { %>
-  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(native_value);
+  typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(<%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, exception_state));
   <% } %>
   if (UNLIKELY(exception_state.HasException())) {
     return exception_state.ToQuickJS();

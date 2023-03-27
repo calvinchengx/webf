@@ -6,6 +6,7 @@
 #include "atomic_string.h"
 #include <vector>
 #include "built_in_string.h"
+#include "foundation/native_string.h"
 #include "qjs_engine_patch.h"
 
 namespace webf {
@@ -16,13 +17,6 @@ AtomicString AtomicString::Empty() {
 
 AtomicString AtomicString::Null() {
   return built_in_string::kNULL;
-}
-
-AtomicString AtomicString::From(JSContext* ctx, NativeString* native_string) {
-  JSValue str = JS_NewUnicodeString(ctx, native_string->string(), native_string->length());
-  auto result = AtomicString(ctx, str);
-  JS_FreeValue(ctx, str);
-  return result;
 }
 
 namespace {
@@ -50,7 +44,7 @@ AtomicString::StringKind GetStringKind(JSValue stringValue) {
   return GetStringKind(reinterpret_cast<const char*>(p->u.str8));
 }
 
-AtomicString::StringKind GetStringKind(const NativeString* native_string) {
+AtomicString::StringKind GetStringKind(const SharedNativeString* native_string) {
   if (!native_string->length()) {
     return AtomicString::StringKind::kIsMixed;
   }
@@ -92,11 +86,11 @@ AtomicString::AtomicString(JSContext* ctx, const uint16_t* str, size_t length) :
   JS_FreeValue(ctx, string);
 }
 
-AtomicString::AtomicString(JSContext* ctx, const NativeString* native_string)
+AtomicString::AtomicString(JSContext* ctx, const std::unique_ptr<AutoFreeNativeString>& native_string)
     : runtime_(JS_GetRuntime(ctx)),
       atom_(JS_NewUnicodeAtom(ctx, native_string->string(), native_string->length())),
-      kind_(GetStringKind(native_string)),
-      length_(native_string->length()) {}
+      kind_(GetStringKind(native_string.get())),
+      length_(native_string->length()){};
 
 AtomicString::AtomicString(JSContext* ctx, JSValue value)
     : runtime_(JS_GetRuntime(ctx)), atom_(JS_ValueToAtom(ctx, value)) {
@@ -169,7 +163,7 @@ std::string AtomicString::ToStdString(JSContext* ctx) const {
   return result;
 }
 
-std::unique_ptr<NativeString> AtomicString::ToNativeString(JSContext* ctx) const {
+std::unique_ptr<SharedNativeString> AtomicString::ToNativeString(JSContext* ctx) const {
   if (IsNull()) {
     // Null string is same like empty string
     return built_in_string::kempty_string.ToNativeString(ctx);
@@ -178,7 +172,7 @@ std::unique_ptr<NativeString> AtomicString::ToNativeString(JSContext* ctx) const
   uint32_t length;
   uint16_t* bytes = JS_ToUnicode(ctx, stringValue, &length);
   JS_FreeValue(ctx, stringValue);
-  return std::make_unique<NativeString>(bytes, length);
+  return std::make_unique<SharedNativeString>(bytes, length);
 }
 
 StringView AtomicString::ToStringView() const {
@@ -285,9 +279,7 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
   if (from == fromend)
     return self;
 
-  std::vector<CharType> data;
-  data.resize(len);
-  CharType* to = data.data();
+  auto* to = (CharType*)js_malloc(ctx, len);
   size_t outc = static_cast<size_t>(from - characters);
 
   if (outc)
@@ -302,12 +294,18 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
       break;
   }
 
-  data.resize(outc);
+  AtomicString str;
+  auto data = (CharType*)js_malloc(ctx, outc);
+  memcpy(data, to, outc);
+  js_free(ctx, to);
   if (self.Is8Bit()) {
-    return AtomicString(ctx, reinterpret_cast<const char*>(data.data()), data.size());
+    str = AtomicString(ctx, reinterpret_cast<const char*>(data), outc);
+  } else {
+    str = AtomicString(ctx, reinterpret_cast<const uint16_t*>(data), outc);
   }
 
-  return AtomicString(ctx, reinterpret_cast<const uint16_t*>(data.data()), data.size());
+  js_free(ctx, data);
+  return str;
 }
 
 AtomicString AtomicString::RemoveCharacters(JSContext* ctx, CharacterMatchFunctionPtr find_match) {
