@@ -24,6 +24,11 @@ describe('Input line-height', () => {
     );
     BODY.appendChild(div);
     await snapshot();
+    simulateKeyboard('Enter');
+
+    div.addEventListener('keyboard', () => {
+
+    });
   });
 
   it('height set and line-height set', async () => {

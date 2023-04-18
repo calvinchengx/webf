@@ -326,6 +326,7 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
       {"__webf_match_image_snapshot__", matchImageSnapshot, 3},
       {"__webf_environment__", environment, 0},
       {"__webf_simulate_pointer__", simulatePointer, 3},
+      {"__webf_simulate_keyboard__", simulateKeyboard, 3},
       {"__webf_simulate_inputtext__", simulateInputText, 1},
       {"__webf_trigger_global_error__", triggerGlobalError, 0},
       {"__webf_parse_html__", parseHTML, 1},

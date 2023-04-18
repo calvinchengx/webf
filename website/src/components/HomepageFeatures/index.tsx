@@ -1,55 +1,82 @@
 import React from 'react';
 import clsx from 'clsx';
-import styles from './styles.module.css';
+
+import './styles.css';
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
-  description: JSX.Element;
+  bigTitle: string;
+  description: string;
+  btnLink: string;
+  btnText: string;
 };
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
-    description: (
-      <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
-      </>
-    ),
+    title: 'Backward Compatible With Web Browsers',
+    bigTitle: 'Same API as browsers',
+    description: "WebF provides a subset of W3C/WHATWG standard HTML/CSS and ECMAScript 2020 JavaScript support. Apps built for WebF yield the same results and behavior in web browsers.",
+    btnLink: '/avaiable_css_web_apis',
+    btnText: 'View the available CSS and Web APIs.'
   },
   {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
-    description: (
-      <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
-      </>
-    ),
+    title: 'True Web Develope Experience',
+    bigTitle: 'Web like dev workflow',
+    description: 'Utilize your favorite web frameworks, build tools, and Chrome DevTools to develop, debug, and deploy your apps.',
+    btnLink: '/web_framework_and_tips',
+    btnText: 'View the available web frameworks and others  .'
   },
   {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
-      </>
-    ),
+    title: 'High Performance',
+    bigTitle: 'Faster page startup time compared to WebView',
+    description: 'Execute bytecode with optimized QuickJS engine, and render HTML/CSS in the same context as Flutter apps for significant improvements.',
+    btnLink: '/blog/high_performance_webf',
+    btnText: 'Explore why webf are faster than WebView.'
   },
+  {
+    title: 'Smaller Bundle Size',
+    bigTitle: '25MB zip bundle for everything',
+    description: 'Create cross-platform desktop apps using web technologies, featuring smaller package sizes.',
+    btnLink: '/blog/high_performance_webf',
+    btnText: 'Have a Try'
+  },
+  {
+    title: 'One Runtime for All Platforms',
+    bigTitle: 'Consistency cross mobile and desktop platforms',
+    description: 'All HTML/CSS and JavaScript support is self-contained, with no external WebView required, eliminating concerns about browser compatibility.',
+    btnLink: '/',
+    btnText: 'Learn more'
+  },
+  {
+    title: 'Beyond the Web',
+    bigTitle: 'Accomplish what the web can do, and also what it cannot do',
+    description: 'Embed anything supported by Flutter in WebF: combine pre-trained AI models with web apps, use hardware-accelerated video players, or integrate Unity game engines with AR/VR apps in your web pages at full speed.',
+    btnLink: '/',
+    btnText: 'Learn more'
+  },
+  {
+    title: '',
+    bigTitle: '',
+    description: '',
+    btnLink: '',
+    btnText: ''
+  }
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature(props: FeatureItem & {idx: number}) {
   return (
-    <div className={clsx('col col--4')}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+    <div className={"feature " + (props.idx % 2 == 0 ? '' : 'reverse')}>
+      <div className="text">
+        <hgroup>
+          <h4 className="title text-blue">{props.title}</h4>
+          <h3>{props.bigTitle}</h3>
+        </hgroup>
+        <p>{props.description}</p>
+        <a className="button_item btn_default" href={props.btnLink}>{props.btnText}</a>
       </div>
-      <div className="text--center padding-horiz--md">
-        <h3>{title}</h3>
-        <p>{description}</p>
+      <div className="media">
+        <div>IMG</div>
+        {/* <img alt="Multi-Platform" src="https://storage.googleapis.com/cms-storage-bucket/ed2e069ee37807f5975a.jpg" /> */}
       </div>
     </div>
   );
@@ -57,14 +84,10 @@ function Feature({title, Svg, description}: FeatureItem) {
 
 export default function HomepageFeatures(): JSX.Element {
   return (
-    <section className={styles.features}>
-      <div className="container">
-        <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
-          ))}
-        </div>
-      </div>
+    <section className="feature_container">
+      {FeatureList.map((props, idx) => (
+        <Feature key={idx} {...props} idx={idx} />
+      ))}
     </section>
   );
 }

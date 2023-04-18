@@ -10,6 +10,11 @@
   overflow: hidden;
 }
 
+.title {
+  font-size: 60px;
+  font-family: "Google Sans";
+}
+
 @media screen and (max-width: 996px) {
   .heroBanner {
     padding: 2rem;
@@ -17,7 +22,19 @@
 }
 
 .buttons {
+  margin-top: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+
+.flutter_text {
+  color: rgb(83, 189, 247);
+}
+
+.flutter_text:hover {
+  cursor: pointer;
+  text-decoration: none;
+  color: rgb(83, 189, 247);;
 }

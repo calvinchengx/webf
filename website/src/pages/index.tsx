@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
@@ -10,16 +10,15 @@ import styles from './index.module.css';
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
+    <header className={clsx('hero', styles.heroBanner)}>
       <div className="container">
-        <h1 className="hero__title">{siteConfig.title}</h1>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <h1 className={styles.title}>Build <a href="https://flutter.io/" className={styles.flutter_text}>Flutter</a> Apps</h1>
+        <h1 className={styles.title}>with HTML/CSS and JavaScript</h1>
+        <h2>
+        Build Flutter apps with web technologies and real-time updates like web applications.
+        </h2>
         <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/intro">
-            Docusaurus Tutorial - 5min ⏱️
-          </Link>
+          <div className="button_item btn_default">Getting Started</div>
         </div>
       </div>
     </header>
@@ -28,12 +27,29 @@ function HomepageHeader() {
 
 export default function Home(): JSX.Element {
   const {siteConfig} = useDocusaurusContext();
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-5LWS72MK7N';
+    document.body.appendChild(script);
+
+    const traceCode = `window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-5LWS72MK7N');`;
+    const trace = document.createElement('script');
+    trace.innerHTML = traceCode;
+    document.body.appendChild(trace);
+  }, []);
+
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
+      title={`Build flutter apps with HTML/CSS and JavaScript | WebF`}
+      description="Build flutter apps with HTML/CSS and JavaScript">
       <HomepageHeader />
-      <main>
+      <main className={styles.feature_container}>
         <HomepageFeatures />
       </main>
     </Layout>
