@@ -61,7 +61,7 @@ class _InactiveRenderObjects {
   }
 }
 
-class Document extends Node {
+class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
   RenderViewportBox? _viewport;
@@ -76,6 +76,9 @@ class Document extends Node {
   late StyleNodeManager _styleNodeManager;
 
   final RuleSet ruleSet = RuleSet();
+
+  @override
+  bool get isConnected => true;
 
   Document(
     BindingContext context, {
@@ -179,7 +182,7 @@ class Document extends Node {
     methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
     methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
 
-    if (kDebugMode) {
+    if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }
   }
@@ -288,7 +291,7 @@ class Document extends Node {
   }
 
   @override
-  Node removeChild(Node child) {
+  Node? removeChild(Node child) {
     if (documentElement == child) {
       documentElement = null;
       ruleSet.reset();
@@ -375,6 +378,7 @@ class Document extends Node {
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
+      styleDirtyElements.clear();
       return;
     }
     if (styleDirtyElements.any((element) {
@@ -395,7 +399,7 @@ class Document extends Node {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _viewport = null;
     gestureListener = null;
     styleSheets.clear();

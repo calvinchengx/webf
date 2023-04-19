@@ -774,6 +774,9 @@ class RenderBoxModel extends RenderBox
       renderPositionPlaceholder!.positioned = copiedRenderBoxModel;
     }
 
+    scrollOffsetX?.removeListener(scrollXListener);
+    scrollOffsetY?.removeListener(scrollYListener);
+
     return copiedRenderBoxModel
       // Copy render style
       ..renderStyle = renderStyle
@@ -847,6 +850,7 @@ class RenderBoxModel extends RenderBox
       SchedulerBinding.instance.addPostFrameCallback((_) {
         markNeedsLayout();
       });
+      SchedulerBinding.instance.scheduleFrame();
     } else {
       needsLayout = true;
       super.markNeedsLayout();
@@ -1090,16 +1094,16 @@ class RenderBoxModel extends RenderBox
 
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
-    RenderLayoutBox? scrollContainer;
-    RenderLayoutBox? parent = this.parent as RenderLayoutBox?;
+    RenderBoxModel? scrollContainer;
+    AbstractNode? parent = this.parent;
 
-    while (parent != null) {
-      if (parent.isScrollingContentBox) {
+    while (parent != null && parent is RenderLayoutBox) {
+      if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
         // Scroll container should has definite constraints
-        scrollContainer = parent.parent as RenderLayoutBox?;
+        scrollContainer = parent.parent as RenderBoxModel;
         break;
       }
-      parent = parent.parent as RenderLayoutBox?;
+      parent = parent.parent;
     }
     return scrollContainer;
   }
@@ -1127,6 +1131,7 @@ class RenderBoxModel extends RenderBox
   Size _maxScrollableSize = Size.zero;
   Size get scrollableSize => _maxScrollableSize;
   set scrollableSize(Size value) {
+    assert(value.isFinite);
     _maxScrollableSize = value;
   }
 

@@ -289,9 +289,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
     document.cookie.clearCookie();
   }
 
-  void evaluateJavaScripts(String code) {
+  void evaluateJavaScripts(String code) async {
     assert(!_disposed, 'WebF have already disposed');
-    evaluateScripts(_contextId, code);
+    await evaluateScripts(_contextId, code);
   }
 
   void _setupObserver() {
@@ -321,6 +321,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
   // Dispose controller and recycle all resources.
   void dispose() {
+    _disposed = true;
     debugDOMTreeChanged = null;
 
     _teardownObserver();
@@ -335,7 +336,6 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
 
     document.dispose();
     window.dispose();
-    _disposed = true;
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;
@@ -479,7 +479,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         targetParentNode!.insertBefore(newNode, target);
         break;
       case 'afterbegin':
-        target.insertBefore(newNode, target.firstChild);
+        target.insertBefore(newNode, target.firstChild!);
         break;
       case 'beforeend':
         target.appendChild(newNode);
@@ -490,7 +490,7 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
         } else {
           targetParentNode.insertBefore(
             newNode,
-            targetParentNode.childNodes[targetParentNode.childNodes.indexOf(target) + 1],
+            target.nextSibling!
           );
         }
         break;
@@ -604,9 +604,9 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   }
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  void disposeBindingObject(Pointer<NativeBindingObject> pointer) {
+  void disposeBindingObject(Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = BindingBridge.getBindingObject(pointer);
-    bindingObject?.dispose();
+    await bindingObject?.dispose();
     malloc.free(pointer);
   }
 
@@ -1008,8 +1008,8 @@ class WebFController {
   }
 
   void dispose() {
-    _view.dispose();
     _module.dispose();
+    _view.dispose();
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);
     _nameIdMap.remove(name);
@@ -1026,7 +1026,7 @@ class WebFController {
     if (_entrypoint != null && shouldResolve) {
       await _resolveEntrypoint();
       if (_entrypoint!.isResolved && shouldEvaluate) {
-        _evaluateEntrypoint(animationController: animationController);
+        await _evaluateEntrypoint(animationController: animationController);
       } else {
         throw FlutterError('Unable to resolve $_entrypoint');
       }
@@ -1067,13 +1067,13 @@ class WebFController {
   }
 
   // Execute the content from entrypoint bundle.
-  void _evaluateEntrypoint({AnimationController? animationController}) async {
+  Future<void> _evaluateEntrypoint({AnimationController? animationController}) async {
     // @HACK: Execute JavaScript scripts will block the Flutter UI Threads.
     // Listen for animationController listener to make sure to execute Javascript after route transition had completed.
     if (animationController != null) {
-      animationController.addStatusListener((AnimationStatus status) {
+      animationController.addStatusListener((AnimationStatus status) async {
         if (status == AnimationStatus.completed) {
-          _evaluateEntrypoint();
+          await _evaluateEntrypoint();
         }
       });
       return;
@@ -1095,7 +1095,7 @@ class WebFController {
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
         // Prefer sync decode in loading entrypoint.
-        evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: Uri.parse(url).path);
+        await evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: Uri.parse(url).path);
       } else if (entrypoint.isBytecode) {
         evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
@@ -1103,7 +1103,7 @@ class WebFController {
       } else if (entrypoint.contentType.primaryType == 'text') {
         // Fallback treating text content as JavaScript.
         try {
-          evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
+          await evaluateScripts(contextId, await resolveStringFromData(data, preferSync: true), url: url);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;
@@ -1127,14 +1127,6 @@ class WebFController {
       if (kProfileMode) {
         PerformanceTiming.instance().mark(PERF_JS_BUNDLE_EVAL_END);
       }
-
-      // trigger DOMContentLoaded event
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        Event event = Event(EVENT_DOM_CONTENT_LOADED);
-        EventTarget window = view.window;
-        window.dispatchEvent(event);
-      });
-      SchedulerBinding.instance.scheduleFrame();
     }
   }
 
@@ -1149,6 +1141,11 @@ class WebFController {
     // Are we still parsing?
     if (_view.document.parsing) return;
 
+    // Are all script element complete?
+    if (_view.document.isDelayingDOMContentLoadedEvent) return;
+
+    _dispatchDOMContentLoadedEvent();
+
     // Still waiting for images/scripts?
     if (_view.document.hasPendingRequest) return;
 
@@ -1161,6 +1158,13 @@ class WebFController {
     _isComplete = true;
 
     _dispatchWindowLoadEvent();
+  }
+
+  void _dispatchDOMContentLoadedEvent() {
+    Event event = Event(EVENT_DOM_CONTENT_LOADED);
+    EventTarget window = view.window;
+    window.dispatchEvent(event);
+    _view.document.dispatchEvent(event);
   }
 
   void _dispatchWindowLoadEvent() {

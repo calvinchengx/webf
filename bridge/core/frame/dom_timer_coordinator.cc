@@ -51,7 +51,6 @@ void DOMTimerCoordinator::removeTimeoutById(int32_t timer_id) {
   if (active_timers_.count(timer_id) == 0)
     return;
   auto timer = active_timers_[timer_id];
-  assert(timer->status() == DOMTimer::TimerStatus::kFinished);
   active_timers_.erase(timer_id);
 }
 
@@ -60,7 +59,12 @@ void DOMTimerCoordinator::forceStopTimeoutById(int32_t timer_id) {
     return;
   }
   auto timer = active_timers_[timer_id];
-  timer->SetStatus(DOMTimer::TimerStatus::kCanceled);
+
+  if (timer->status() == DOMTimer::TimerStatus::kExecuting) {
+    timer->SetStatus(DOMTimer::TimerStatus::kCanceled);
+  } else {
+    removeTimeoutById(timer->timerId());
+  }
 }
 
 std::shared_ptr<DOMTimer> DOMTimerCoordinator::getTimerById(int32_t timer_id) {

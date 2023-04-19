@@ -99,7 +99,7 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-abstract class Element extends Node with ElementBase, ElementEventMixin, ElementOverflowMixin {
+abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
@@ -212,15 +212,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   @override
   RenderBox? get renderer => renderBoxModel;
 
+  HTMLCollection? _collection;
+
+  HTMLCollection ensureCachedCollection() {
+    _collection ??= HTMLCollection(this);
+    return _collection!;
+  }
+
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/children
   // The children is defined at interface [ParentNode].
-  List<Element> get children {
-    List<Element> _children = [];
-    for (Node child in childNodes) {
-      if (child is Element) _children.add(child);
-    }
-    return _children;
-  }
+  HTMLCollection get children => ensureCachedCollection();
 
   @override
   RenderBox createRenderer() {
@@ -813,7 +814,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     renderStyle.detach();
     style.dispose();
     attributes.clear();
@@ -967,8 +968,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
   Node insertBefore(Node child, Node referenceNode) {
     // Node.insertBefore will change element tree structure,
     // so get the referenceIndex before calling it.
-    int referenceIndex = childNodes.indexOf(referenceNode);
-    Node node = super.insertBefore(child, referenceNode);
+    // int referenceIndex = childNodes.indexOf(referenceNode);
+    Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.parent = renderStyle;
@@ -976,19 +977,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
 
     if (isRendererAttached) {
       // If afterRenderObject is null, which means insert child at the head of parent.
-      RenderBox? afterRenderObject;
+      RenderBox? afterRenderObject = referenceNode.previousSibling?.renderer;
 
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttached) {
-        if (referenceIndex < childNodes.length) {
-          while (referenceIndex >= 0) {
-            Node reference = childNodes[referenceIndex];
-            if (reference.isRendererAttached) {
-              afterRenderObject = reference.renderer;
-              break;
-            } else {
-              referenceIndex--;
-            }
+        // Found the most closed
+        if (afterRenderObject == null) {
+          Node? ref = referenceNode.previousSibling;
+          while(ref != null && afterRenderObject == null) {
+            afterRenderObject = ref.renderer;
+            ref = ref.previousSibling;
           }
         }
 
@@ -998,8 +996,8 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
             && referenceNode is Element
             && referenceNode.renderer != null
             && referenceNode.isRendererAttached) {
-          while(referenceIndex + 1 < childNodes.length) {
-            Node reference = childNodes[referenceIndex + 1];
+          Node? reference = referenceNode;
+          while(reference != null) {
             if(reference.isRendererAttached && reference is Element) {
               if(reference.renderer != null &&
                   reference.renderer!.parent != null &&
@@ -1008,7 +1006,7 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
               }
               reference.unmountRenderObject(deep: true);
             }
-            referenceIndex++;
+            reference = reference.nextSibling;
           }
         }
 
@@ -1886,14 +1884,16 @@ abstract class Element extends Node with ElementBase, ElementEventMixin, Element
     if (keys.isEmpty || cssMap.values.isEmpty) {
       return false;
     }
-    final rules = cssMap.values.reduce((value, element) => value + element);
-    for (CSSRule rule in rules) {
-      if (rule is! CSSStyleRule) {
-        continue;
-      }
-      for (Selector selector in rule.selectorGroup.selectors) {
-        if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
-          return true;
+    for(final rules in cssMap.values) {
+      for(int i = 0; i < rules.length; i ++) {
+        var rule = rules[i];
+        if (rule is! CSSStyleRule) {
+          continue;
+        }
+        for (Selector selector in rule.selectorGroup.selectors) {
+          if (selector.simpleSelectorSequences.any((element) => keys.contains(element.simpleSelector.name))) {
+            return true;
+          }
         }
       }
     }

@@ -19,6 +19,7 @@ import 'bridge/from_native.dart';
 import 'bridge/test_input.dart';
 import 'bridge/to_native.dart';
 import 'local_http_server.dart';
+import 'mem_leak_detector.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
@@ -28,11 +29,13 @@ final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
 const MOCK_SERVER_PORT = 4567;
 
-Future<void> startHttpMockServer() async {
-  await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
+Future<Process> startHttpMockServer() async {
+  return await Process.start('node', [testDirectory + '/scripts/mock_http_server.js'], environment: {
     'PORT': MOCK_SERVER_PORT.toString()
   }, mode: ProcessStartMode.inheritStdio);
 }
+
+List<List<int>> mems = [];
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
@@ -41,7 +44,8 @@ void main() async {
   defineWebFCustomElements();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
-  await startHttpMockServer();
+  Process mockHttpServer = await startHttpMockServer();
+  sleep(Duration(seconds: 2));
 
   // FIXME: This is a workaround for testcases.
   debugOverridePDefaultStyle({DISPLAY: BLOCK});
@@ -88,10 +92,25 @@ void main() async {
       webF.controller!.view.evaluateJavaScripts(codeInjection);
     },
     onLoad: (controller) async {
+      int x = 0;
+      // Collect the running memory info every per 10s.
+      Timer.periodic(Duration(milliseconds: 50), (timer) {
+        mems.add([x += 1, ProcessInfo.currentRss / 1024 ~/ 1024]);
+      });
+
       // Preload load test cases
       String result = await executeTest(testContext!, controller.view.contextId);
       // Manual dispose context for memory leak check.
       webF.controller!.dispose();
+
+      // Check running memorys
+      // Temporary disabled due to exist memory leaks
+      // if (isMemLeaks(mems)) {
+      //   print('Memory leaks found. ${mems.map((e) => e[1]).toList()}');
+      //   exit(1);
+      // }
+
+      mockHttpServer.kill(ProcessSignal.sigkill);
 
       exit(result == 'failed' ? 1 : 0);
     },
