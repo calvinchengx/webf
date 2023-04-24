@@ -29,7 +29,7 @@ const FeatureList: FeatureItem[] = [
   {
     title: 'High Performance',
     bigTitle: 'Faster page startup time compared to WebView',
-    description: 'Execute bytecode with optimized QuickJS engine, and render HTML/CSS in the same context as Flutter apps for significant improvements.',
+    description: 'Execute bytecode with optimized QuickJS engine, and render HTML/CSS in the same context as Flutter apps, saving 50% load times compared to WebView.',
     btnLink: '/blog/high_performance_webf',
     btnText: 'Explore why webf are faster than WebView.'
   },
@@ -55,11 +55,11 @@ const FeatureList: FeatureItem[] = [
     btnText: 'Learn more'
   },
   {
-    title: '',
-    bigTitle: '',
-    description: '',
-    btnLink: '',
-    btnText: ''
+    title: 'Native User experience',
+    bigTitle: 'Deep integration with Flutter gestures and navigating',
+    description: 'Seamlessly integrate Flutter navigation with the web history API or add pull-to-refresh gestures to your web apps, providing users with a complete native app experiences.',
+    btnLink: '/',
+    btnText: 'Learn more'
   }
 ];
 
