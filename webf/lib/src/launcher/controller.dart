@@ -10,6 +10,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui' as ui;
+import 'dart:ui';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/animation.dart';
@@ -695,6 +696,11 @@ class WebFViewController implements WidgetsBindingObserver, ElementsBindingObser
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
     // TODO: implement didPushRouteInformation
     return false;
+  }
+
+  @override
+  Future<ui.AppExitResponse> didRequestAppExit() async {
+    return AppExitResponse.exit;
   }
 }
 
